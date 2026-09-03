@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LogViewer · UI 设计原型 v4</title>
+<style>
+/* ============ 设计令牌 ============ */
+:root{
+  --font-ui:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  --font-mono:"JetBrains Mono","SF Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --r-xs:5px; --r-sm:7px; --r-md:10px; --r-lg:14px; --r-xl:18px;
+  --ease:cubic-bezier(.32,.72,.34,1);
+  --pad-page:32px;
+}
+[data-theme="dark"]{
+  --page-bg:#0a0c10;
+  --bg:#10141b; --surface:#161b24; --surface-2:#1c222d; --surface-3:#222a37; --surface-4:#2a3344;
+  --border:#262e3d; --border-2:#3a4458; --border-soft:rgba(255,255,255,.04);
+  --text:#e6ecf5; --text-dim:#8693ab; --text-faint:#5a6478;
+  --accent:#5b8cff; --accent-2:#8f7bff;
+  --mark:#ffd66e; --mark-bg:rgba(255,214,110,.32); --mark-text:#1a1500;
+  --hover:rgba(255,255,255,.045); --active:rgba(255,255,255,.07);
+  --scrim:rgba(0,0,0,.55);
+  --shadow-window:0 30px 90px -20px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.04);
+  --shadow-pop:0 12px 32px -8px rgba(0,0,0,.55);
+  /* 过滤器调色板（8 色，行底纹用低 alpha） */
+  --c-blue:#5b8cff;   --c-blue-t:rgba(91,140,255,.14);
+  --c-violet:#a78bfa; --c-violet-t:rgba(167,139,250,.14);
+  --c-pink:#f472b6;   --c-pink-t:rgba(244,114,182,.14);
+  --c-rose:#fb7185;   --c-rose-t:rgba(251,113,133,.14);
+  --c-amber:#f5a524;  --c-amber-t:rgba(245,165,36,.15);
+  --c-lime:#a3e635;   --c-lime-t:rgba(163,230,53,.13);
+  --c-cyan:#22d3ee;   --c-cyan-t:rgba(34,211,238,.13);
+  --c-emerald:#34d399;--c-emerald-t:rgba(52,211,153,.13);
+}
+[data-theme="light"]{
+  --page-bg:#e8ecf3;
+  --bg:#fafbfc; --surface:#ffffff; --surface-2:#f4f6fa; --surface-3:#e9edf4; --surface-4:#dde3ee;
+  --border:#d9dfe9; --border-2:#c2c9d7; --border-soft:rgba(0,0,0,.03);
+  --text:#1c2230; --text-dim:#5d677e; --text-faint:#8590a6;
+  --accent:#2f6bff; --accent-2:#7a5cff;
+  --mark:#c98a00; --mark-bg:rgba(255,214,110,.5); --mark-text:#1a1500;
+  --hover:rgba(20,40,90,.045); --active:rgba(20,40,90,.08);
+  --scrim:rgba(30,40,60,.4);
+  --shadow-window:0 30px 80px -20px rgba(40,60,100,.3), 0 0 0 1px rgba(0,0,0,.04);
+  --shadow-pop:0 12px 32px -8px rgba(30,45,80,.22);
+  --c-blue:#2f6bff;   --c-blue-t:rgba(47,107,255,.10);
+  --c-violet:#7a5cff; --c-violet-t:rgba(122,92,255,.10);
+  --c-pink:#db2777;   --c-pink-t:rgba(219,39,119,.10);
+  --c-rose:#dc2626;   --c-rose-t:rgba(220,38,38,.10);
+  --c-amber:#b45309;  --c-amber-t:rgba(180,83,9,.10);
+  --c-lime:#4d7c0f;   --c-lime-t:rgba(77,124,15,.10);
+  --c-cyan:#0e7490;   --c-cyan-t:rgba(14,116,144,.10);
+  --c-emerald:#047857;--c-emerald-t:rgba(4,120,87,.10);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--page-bg);color:var(--text);font-family:var(--font-ui);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;transition:background .25s ease,color .25s ease}
+button{font-family:var(--font-ui);cursor:pointer;border:none;background:none;color:inherit;transition:all .15s var(--ease)}
+input{font-family:var(--font-ui);color:var(--text)}
+svg{display:block}
+
+/* ============ 原型页框架 ============ */
+.page{max-width:1180px;margin:0 auto;padding:var(--pad-page) 22px 80px}
+.proto-top{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:10px}
+.proto-top h1{font-size:20px;font-weight:700;letter-spacing:.1px;display:flex;align-items:center;gap:10px}
+.proto-top h1 .ver{font-size:10.5px;font-weight:500;color:var(--text-faint);background:var(--surface-2);border:1px solid var(--border);padding:2px 7px;border-radius:5px;letter-spacing:.05em}
+.proto-top .sub{font-size:12.5px;color:var(--text-dim);margin-top:6px;line-height:1.5}
+.proto-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.seg{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:3px;gap:2px;box-shadow:0 1px 0 var(--border-soft)}
+.seg button{padding:6px 14px;border-radius:6px;font-size:12.5px;color:var(--text-dim);font-weight:500}
+.seg button.on{background:var(--surface-3);color:var(--text);box-shadow:inset 0 0 0 1px var(--border-2)}
+.note{font-size:12.5px;color:var(--text-dim);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:12px 16px;margin:14px 0 22px;line-height:1.75;box-shadow:0 1px 0 var(--border-soft)}
+.note b{color:var(--text);font-weight:600}
+.note kbd{font-family:var(--font-mono);background:var(--surface-2);border:1px solid var(--border-2);border-bottom-width:2px;border-radius:5px;padding:1px 6px;font-size:11px;color:var(--text)}
+
+/* ============ 桌面 App 窗口 ============ */
+.app-wrap{display:flex;justify-content:center;padding:6px 0 0}
+.app{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--shadow-window);display:flex;flex-direction:column;width:100%;max-width:1100px;height:740px}
+
+/* 标题栏 */
+.titlebar{display:flex;align-items:center;height:44px;padding:0 14px;background:linear-gradient(180deg,var(--surface) 0%,var(--bg) 100%);border-bottom:1px solid var(--border);gap:14px;flex:none}
+.dots{display:flex;gap:8px}
+.dots i{width:12px;height:12px;border-radius:50%;transition:filter .15s}
+.dots i:hover{filter:brightness(1.15)}
+.dots i:nth-child(1){background:#ff5f57}.dots i:nth-child(2){background:#febc2e}.dots i:nth-child(3){background:#28c840}
+.tb-title{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.tb-title .fname{font-size:13px;color:var(--text);font-weight:500;font-family:var(--font-mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tb-title .meta{font-size:11px;color:var(--text-faint);font-family:var(--font-mono);display:flex;align-items:center;gap:8px}
+.tb-title .meta .dot{width:3px;height:3px;border-radius:50%;background:var(--text-faint)}
+.tb-actions{display:flex;align-items:center;gap:4px}
+.tb-btn{width:30px;height:30px;border-radius:7px;color:var(--text-dim);display:grid;place-items:center}
+.tb-btn:hover{background:var(--surface-2);color:var(--text)}
+.tb-btn svg{width:15px;height:15px}
+
+/* 工具栏 */
+.toolbar{display:flex;align-items:center;gap:8px;height:50px;padding:0 14px;border-bottom:1px solid var(--border);background:var(--surface);flex:none}
+.tbtn{display:flex;align-items:center;gap:6px;height:30px;padding:0 10px;border-radius:var(--r-sm);font-size:12.5px;color:var(--text-dim);font-weight:500;border:1px solid transparent}
+.tbtn:hover{background:var(--hover);color:var(--text)}
+.tbtn.primary{background:var(--surface-2);border-color:var(--border);color:var(--text)}
+.tbtn svg{width:14px;height:14px}
+.find{margin-left:6px;display:flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-sm);height:32px;padding:0 10px;width:320px;transition:border-color .15s,box-shadow .15s}
+.find:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,140,255,.12)}
+.find svg.search{width:14px;height:14px;color:var(--text-faint);flex:none}
+.find input{flex:1;min-width:0;background:none;border:none;outline:none;font-size:12.5px;color:var(--text)}
+.find input::placeholder{color:var(--text-faint)}
+.find .cnt{font-family:var(--font-mono);font-size:11px;color:var(--text-faint);white-space:nowrap;padding:0 4px;border-left:1px solid var(--border);margin-left:2px}
+.find .nav{display:flex;gap:1px}
+.find .nav button{width:24px;height:24px;border-radius:5px;color:var(--text-dim);display:grid;place-items:center}
+.find .nav button:hover{background:var(--surface-3);color:var(--text)}
+.find .nav button:disabled{opacity:.35;cursor:default}
+.find .nav button:disabled:hover{background:transparent;color:var(--text-dim)}
+.find .nav svg{width:12px;height:12px}
+.find .pin{width:24px;height:24px;border-radius:5px;color:var(--accent);display:grid;place-items:center;border-left:1px solid var(--border);padding-left:7px;margin-left:1px}
+.find .pin:hover{background:rgba(91,140,255,.12)}.find .pin svg{width:13px;height:13px}
+.spacer{flex:1}
+.mode-seg{display:flex;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-sm);padding:2px;gap:1px}
+.mode-seg button{padding:4px 11px;border-radius:5px;font-size:11.5px;font-weight:500;color:var(--text-dim);display:flex;align-items:center;gap:5px}
+.mode-seg button.on{background:var(--surface-3);color:var(--text);box-shadow:inset 0 0 0 1px var(--border-2)}
+.mode-seg button svg{width:11px;height:11px}
+.kebab{width:32px;height:32px;border-radius:var(--r-sm);color:var(--text-dim);display:grid;place-items:center}
+.kebab:hover{background:var(--hover);color:var(--text)}
+.kebab svg{width:16px;height:16px}
+
+/* ============ 分析上下文 ============ */
+.analysisbar{height:34px;display:flex;align-items:center;gap:8px;padding:0 14px;border-bottom:1px solid var(--border);background:var(--bg);flex:none;overflow:hidden}
+.source-tab{display:flex;align-items:center;gap:6px;max-width:230px;height:24px;padding:0 9px;border:1px solid var(--border);border-radius:6px;background:var(--surface-2);font-family:var(--font-mono);font-size:10.5px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.source-tab.on{color:var(--text);border-color:var(--border-2);box-shadow:inset 0 -2px 0 var(--accent)}
+.parse-badge{display:flex;align-items:center;gap:5px;font-size:10.5px;color:var(--c-emerald);white-space:nowrap}
+.parse-badge i{width:6px;height:6px;border-radius:50%;background:currentColor;box-shadow:0 0 0 3px color-mix(in srgb,currentColor 16%,transparent)}
+.context-chip{font-family:var(--font-mono);font-size:10.5px;color:var(--text-dim);border-left:1px solid var(--border);padding-left:9px;white-space:nowrap}
+.context-chip b{color:var(--text);font-weight:600}
+.analysis-action{margin-left:auto;padding:4px 8px;border-radius:5px;color:var(--accent);font-size:11px;font-weight:600;white-space:nowrap}
+.analysis-action:hover{background:rgba(91,140,255,.12)}
+/* ============ 主体：日志区 ============ */
+.body{flex:1;display:flex;flex-direction:column;min-height:0}
+.logpane{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--bg)}
+.loghead{display:flex;align-items:center;height:28px;padding:0 16px;border-bottom:1px solid var(--border);font-size:10.5px;color:var(--text-faint);letter-spacing:.1em;background:var(--surface);font-weight:600}
+.loghead .col-ln{padding-left:28px}
+.loghead .col-tag{width:64px;padding:0 10px}
+.loghead .col-content{flex:1;padding-left:6px}
+.logscroll{flex:1;overflow:auto;font-family:var(--font-mono);font-size:12px;line-height:1.6;scrollbar-width:thin}
+.row{display:flex;align-items:stretch;cursor:default;position:relative;transition:background .08s}
+.row:hover{background:var(--hover)}
+.row.cur{background:rgba(91,140,255,.16);box-shadow:inset 3px 0 0 var(--accent)}
+.row.dim{opacity:.38;filter:saturate(.6)}
+.row .mk{position:absolute;left:0;top:0;bottom:0;width:4px;display:flex;align-items:center;justify-content:center}
+.row .mk .bar{width:3px;height:60%;border-radius:99px}
+.row .ln{width:62px;flex:none;text-align:right;padding:0 14px 0 14px;color:var(--text-faint);user-select:none;flex:none;border-right:1px solid var(--border-soft);align-self:stretch;display:flex;align-items:center;justify-content:flex-end}
+.row.cur .ln{color:var(--accent);font-weight:600}
+.row .tag-l{width:64px;flex:none;text-align:center;color:var(--text-faint);font-size:10.5px;letter-spacing:.05em;align-self:stretch;display:flex;align-items:center;justify-content:center;border-right:1px solid var(--border-soft)}
+.row .tag-l.E{color:var(--c-rose)}.row .tag-l.W{color:var(--c-amber)}.row .tag-l.I{color:var(--c-blue)}.row .tag-l.D{color:var(--text-faint)}.row .tag-l.V{color:var(--text-faint);opacity:.6}
+.row .txt{flex:1;padding:0 16px 0 10px;white-space:pre;overflow:hidden;text-overflow:ellipsis;align-self:stretch;display:flex;align-items:center}
+.row.cont .tag-l{border-right-color:transparent}
+.row.cont .txt{color:var(--text-dim);padding-left:6px}
+mark{background:var(--mark-bg);color:var(--mark-text);border-radius:3px;padding:0 2px;font-weight:600}
+
+/* ============ 主体：底部规则工作台 ============ */
+.filterpane{flex:none;width:100%;height:176px;border-left:0;border-top:1px solid var(--border-2);background:linear-gradient(180deg,var(--surface) 0%,var(--bg) 100%);display:flex;flex-direction:column;min-height:0;box-shadow:0 -10px 28px rgba(0,0,0,.08)}
+.filterhead{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-bottom:1px solid var(--border);min-height:42px}
+.filter-left{display:flex;align-items:center;min-width:0}
+.filterhead .lh{display:flex;align-items:center;gap:10px}
+.filterhead .lh .t{font-size:10.5px;font-weight:700;letter-spacing:.14em;color:var(--text-faint)}
+.filterhead .lh .cnt{font-family:var(--font-mono);font-size:10.5px;color:var(--text-faint);background:var(--surface-2);padding:1px 7px;border-radius:99px;border:1px solid var(--border)}
+.filterhead .rh{display:flex;align-items:center;gap:6px}
+.fbtn{display:flex;align-items:center;gap:5px;height:26px;padding:0 9px;border-radius:6px;font-size:12px;color:var(--text-dim);font-weight:500;border:1px solid var(--border);background:var(--surface-2)}
+.fbtn:hover{background:var(--surface-3);color:var(--text);border-color:var(--border-2)}
+.fbtn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.fbtn.primary:hover{filter:brightness(1.1);color:#fff}
+.fbtn svg{width:12px;height:12px}
+.filterscroll{flex:1;overflow-y:auto;padding:6px 10px}
+.panel-tabs{display:flex;align-items:center;gap:2px;background:var(--surface-2);border:1px solid var(--border);border-radius:7px;padding:3px}
+.panel-tab #fCnt{margin-left:4px;color:var(--accent);font-family:var(--font-mono);font-weight:700}
+.filter-flow{display:flex;align-items:center;gap:6px;margin-left:10px;font-family:var(--font-mono);font-size:10px;color:var(--text-faint)}
+.filter-flow .step{padding:3px 6px;border-radius:4px;border:1px solid var(--border);background:var(--surface-2)}
+.filter-flow .include{color:var(--c-blue)}.filter-flow .exclude{color:var(--c-rose)}.filter-flow svg{width:12px;height:12px;color:var(--text-faint)}
+.panel-tab{height:22px;padding:0 8px;border-radius:4px;font-size:10.5px;font-weight:600;color:var(--text-faint)}
+.panel-tab.on{background:var(--surface-4);color:var(--text);box-shadow:inset 0 0 0 1px var(--border-2)}
+.detailpane{flex:1;overflow:auto;padding:14px 16px;background:var(--surface)}
+.detailpane .empty{font-size:12px;color:var(--text-faint);line-height:1.7;padding-top:8px}
+.detail-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;font-size:12px;font-weight:700}
+.detail-title .level{font-family:var(--font-mono);font-size:10px;padding:2px 6px;border-radius:4px;background:var(--c-rose-t);color:var(--c-rose)}
+.detail-message{font-family:var(--font-mono);font-size:11px;line-height:1.6;color:var(--text);padding:10px;border:1px solid var(--border);border-radius:7px;background:var(--bg);white-space:pre-wrap;word-break:break-word}
+.field-label{margin:16px 0 7px;font-size:10px;letter-spacing:.12em;font-weight:700;color:var(--text-faint)}
+.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.field{padding:7px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface-2);min-width:0}
+.field span{display:block;font-size:9.5px;color:var(--text-faint);margin-bottom:3px}.field b{display:block;font-family:var(--font-mono);font-size:10.5px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.detail-actions{display:flex;gap:6px;margin-top:14px}.detail-actions button{flex:1;padding:7px 6px;border:1px solid var(--border);border-radius:6px;background:var(--surface-2);font-size:10.5px;color:var(--text-dim)}.detail-actions button:hover{border-color:var(--accent);color:var(--accent)}
+.frow{display:flex;align-items:center;gap:8px;height:32px;padding:0 12px;cursor:pointer;position:relative;transition:background .1s}
+.frow::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--fc,transparent);transition:background .15s}
+.frow:hover{background:var(--hover)}
+.frow.on{background:var(--active)}
+.frow .chk{width:14px;height:14px;border-radius:4px;border:1.5px solid var(--border-2);display:grid;place-items:center;flex:none;background:var(--bg);transition:all .15s}
+.frow.on .chk{background:var(--fc);border-color:var(--fc)}
+.frow.on .chk svg{opacity:1}
+.frow .chk svg{width:9px;height:9px;color:#fff;opacity:0}
+.frow .lt{font-family:var(--font-mono);font-size:10.5px;font-weight:700;color:var(--text-faint);background:var(--surface-2);border:1px solid var(--border);border-radius:4px;width:18px;height:18px;display:grid;place-items:center;flex:none;letter-spacing:0}
+.frow.on .lt{color:var(--text);background:var(--surface-3);border-color:var(--border-2)}
+.frow .swatch{width:10px;height:10px;border-radius:3px;background:var(--fc);flex:none;box-shadow:0 0 0 2px rgba(255,255,255,0);transition:box-shadow .15s}
+.frow:hover .swatch{box-shadow:0 0 0 2px var(--fc);opacity:.3}
+.frow .desc{flex:1;min-width:0;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.frow .desc .verb{color:var(--text);font-weight:500}
+.frow .desc .pat{color:var(--text);font-family:var(--font-mono);background:var(--surface-2);padding:1px 6px;border-radius:4px;font-size:11.5px;border:1px solid var(--border)}
+.frow .desc .meta{color:var(--text-faint);font-size:10.5px}
+.frow .desc .tag-excl{color:var(--c-rose);border:1px solid var(--c-rose);border-radius:4px;padding:0 5px;font-size:10px;letter-spacing:.05em;font-weight:600}
+.frow .desc .tag-rx{color:var(--accent-2);border:1px solid var(--accent-2);border-radius:4px;padding:0 5px;font-size:10px;letter-spacing:.05em;font-weight:600}
+.frow .cnt{font-family:var(--font-mono);font-size:11px;color:var(--text-faint);flex:none;min-width:52px;text-align:right}
+.frow .cnt b{color:var(--text);font-weight:600}
+.frow .menu{width:24px;height:24px;border-radius:5px;color:var(--text-faint);display:none;place-items:center}
+.frow:hover .menu{display:grid}
+.frow .menu:hover{background:var(--surface-3);color:var(--text)}
+.frow .menu svg{width:14px;height:14px}
+
+/* 添加过滤器 */
+.filteradd{display:flex;align-items:center;gap:8px;padding:8px 12px;border-top:1px solid var(--border);background:var(--surface-2)}
+.finput{flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);height:28px;padding:0 10px;font-size:12px;outline:none;color:var(--text);transition:border-color .15s}
+.finput:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,140,255,.12)}
+.finput::placeholder{color:var(--text-faint)}
+.swatches{display:flex;gap:4px}
+.swatches button{width:16px;height:16px;border-radius:4px;flex:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.15);transition:transform .12s var(--ease),box-shadow .12s}
+.swatches button:hover{transform:scale(1.15)}
+.swatches button.sel{box-shadow:inset 0 0 0 1px rgba(255,255,255,.3),0 0 0 2px var(--text);transform:scale(1.1)}
+
+/* ============ 状态栏 ============ */
+.statusbar{display:flex;align-items:center;gap:14px;height:30px;padding:0 14px;border-top:1px solid var(--border);background:var(--surface);font-size:11.5px;color:var(--text-dim);font-family:var(--font-mono);flex:none}
+.statusbar .src{display:flex;align-items:center;gap:6px;max-width:38%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.statusbar .src svg{width:12px;height:12px;color:var(--text-faint);flex:none}
+.statusbar .hit{color:var(--accent);font-weight:600}
+.statusbar .grow{flex:1}
+.statusbar .grp{display:flex;align-items:center;gap:6px}
+.statusbar .sep{color:var(--text-faint);opacity:.5}
+
+/* ============ 移动端 ============ */
+.mobile-stage{display:flex;gap:40px;justify-content:center;align-items:flex-start;flex-wrap:wrap;padding:6px 0 0}
+.phone{width:375px;height:760px;background:var(--surface);border:1px solid var(--border);border-radius:44px;padding:11px;box-shadow:var(--shadow-window)}
+.phone-screen{width:100%;height:100%;border-radius:34px;overflow:hidden;position:relative;display:flex;flex-direction:column;background:var(--bg)}
+.m-top{display:flex;align-items:center;gap:8px;height:50px;padding:0 14px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,var(--surface) 0%,var(--bg) 100%)}
+.m-top svg{width:18px;height:18px;color:var(--text-dim)}
+.m-top .ibtn{width:34px;height:34px;border-radius:9px;display:grid;place-items:center}
+.m-top .ibtn:active{background:var(--surface-3)}
+.m-top .fname{flex:1;text-align:center;font-size:12.5px;font-weight:600;font-family:var(--font-mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.m-top .enc{font-size:10px;color:var(--text-faint);font-family:var(--font-mono);border:1px solid var(--border);border-radius:4px;padding:1px 5px;margin-right:4px}
+.m-find{display:flex;gap:6px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--border)}
+.m-find .box{flex:1;display:flex;align-items:center;gap:6px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;height:32px;padding:0 10px}
+.m-find .box svg{width:13px;height:13px;color:var(--text-faint)}
+.m-find input{flex:1;min-width:0;background:none;border:none;outline:none;font-size:12px}
+.m-find .cnt{font-family:var(--font-mono);font-size:10.5px;color:var(--text-faint)}
+.m-log{flex:1;overflow:auto;font-family:var(--font-mono);font-size:10.5px;line-height:1.55}
+.m-log .row{height:18px;font-size:10.5px}
+.m-log .row .ln{width:46px;padding:0 8px;font-size:9.5px}
+.m-log .row .tag-l{width:14px;font-size:9px;border-right:none}
+.m-log .row .txt{padding:0 10px 0 6px;white-space:pre;overflow:hidden;text-overflow:ellipsis}
+.m-log .row .mk{width:3px}
+.m-status{display:flex;gap:8px;align-items:center;padding:6px 14px;border-top:1px solid var(--border);font-size:10px;color:var(--text-dim);font-family:var(--font-mono)}
+.m-status .hit{color:var(--accent);font-weight:600}
+.m-filterbar{display:flex;align-items:center;gap:8px;min-height:42px;padding:8px 14px;border-top:1px solid var(--border);background:var(--surface);font-size:11px;color:var(--text-dim);cursor:pointer}
+.m-filterbar:hover{background:var(--surface-2)}
+.m-filterbar .dots{display:flex;gap:3px}.m-filterbar .dots i{width:6px;height:6px;border-radius:2px}
+.m-filterbar .label{font-weight:650;color:var(--text);flex:1}.m-filterbar .cnt{font-family:var(--font-mono);font-size:10.5px;color:var(--text-faint);background:var(--surface-2);border:1px solid var(--border);border-radius:99px;padding:1px 7px}
+.m-filterbar svg{width:16px;height:16px;flex:none;color:var(--text-faint)}
+.m-nav{display:flex;border-top:1px solid var(--border);background:var(--surface-2);padding-bottom:env(safe-area-inset-bottom)}
+.m-nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0 11px;color:var(--text-dim);font-size:10px;font-weight:500}
+.m-nav button svg{width:19px;height:19px}.m-nav button.on{color:var(--accent)}
+.sheet-mask{position:absolute;inset:0;background:var(--scrim);opacity:0;pointer-events:none;transition:.22s;z-index:5}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--border-2);border-radius:22px 22px 0 0;padding:6px 0 16px;transform:translateY(105%);transition:.26s var(--ease);z-index:6;max-height:75%;display:flex;flex-direction:column}
+.sheet.open{transform:translateY(0)}
+.sheet-mask.open{opacity:1;pointer-events:auto}
+.sheet .grip{width:38px;height:4px;border-radius:99px;background:var(--border-2);margin:6px auto 4px}
+.sheet .st{font-size:14px;font-weight:700;padding:10px 18px 6px;display:flex;justify-content:space-between;align-items:center}
+.sheet .st .t2{font-size:11px;font-weight:500;color:var(--accent)}
+.sheet-mode{display:flex;gap:6px;padding:0 18px 6px}
+.sheet-mode button{flex:1;padding:6px;border:1px solid var(--border);border-radius:7px;font-size:11.5px;color:var(--text-dim);background:var(--surface-2)}
+.sheet-mode button.on{background:var(--surface-3);color:var(--text);border-color:var(--accent);color:var(--accent);font-weight:600}
+.sheet-body{overflow-y:auto;padding:0 8px 6px}
+.sheet .frow{height:36px;padding:0 12px;border-radius:8px;margin:2px 0}
+
+/* ============ 设计规范 ============ */
+.spec{margin-top:52px}
+.spec h2{font-size:18px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:10px}
+.spec h2::before{content:"";width:3px;height:18px;background:linear-gradient(180deg,var(--accent),var(--accent-2));border-radius:99px}
+.spec .desc{font-size:12.5px;color:var(--text-dim);margin-bottom:22px;line-height:1.6;max-width:720px}
+.spec-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:18px;box-shadow:0 1px 0 var(--border-soft)}
+.card h3{font-size:12.5px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.card h3 .meta{font-size:10.5px;color:var(--text-faint);font-weight:500;font-family:var(--font-mono)}
+.sw-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.sw-item{border-radius:var(--r-sm);overflow:hidden;border:1px solid var(--border)}
+.sw-item .c{height:46px;position:relative;display:flex;align-items:flex-end;padding:4px 6px;font-family:var(--font-mono);font-size:9.5px;color:rgba(255,255,255,.85);text-shadow:0 1px 2px rgba(0,0,0,.4)}
+.sw-item .l{padding:5px 8px;font-size:10px;font-family:var(--font-mono);color:var(--text-dim);background:var(--surface-2)}
+.ty-row{display:flex;align-items:baseline;justify-content:space-between;padding:10px 0;border-bottom:1px dashed var(--border);gap:12px}
+.ty-row:last-child{border:none}
+.ty-row .sample{font-size:13px}
+.ty-row .meta{font-family:var(--font-mono);font-size:10.5px;color:var(--text-faint);flex:none}
+.rule{display:flex;gap:10px;padding:7px 0;font-size:12.5px;color:var(--text-dim);line-height:1.65;align-items:flex-start}
+.rule b{color:var(--text);font-weight:600;flex:none;min-width:64px}
+.filter-illust{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+.filter-illust .ex{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;background:var(--surface-2);border:1px solid var(--border);font-size:11.5px}
+.filter-illust .ex .l{font-family:var(--font-mono);font-size:10px;color:var(--text-faint);font-weight:700;width:14px}
+.filter-illust .ex .sw{width:9px;height:9px;border-radius:2px;flex:none}
+.filter-illust .ex .d{color:var(--text-dim);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.filter-illust .ex .c{font-family:var(--font-mono);font-size:10.5px;color:var(--text-faint)}
+.modes{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:6px}
+.modes .md{padding:8px 6px;border:1px solid var(--border);border-radius:6px;text-align:center;background:var(--surface-2)}
+.modes .md b{font-size:11px;color:var(--text);display:block}
+.modes .md span{font-size:10px;color:var(--text-faint)}
+
+.hidden{display:none!important}
+@media (max-width:760px){.app{height:580px}.find{width:200px}.filterpane{width:100%;height:158px}.filter-flow{display:none}.analysisbar .source-tab:nth-child(2),.analysisbar .context-chip{display:none}}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="proto-top">
+    <div>
+      <h1>LogViewer · UI 设计原型 <span class="ver">v4</span></h1>
+      <div class="sub">基于 TextAnalysisTool 的“日志 + 底部规则”结构重构。现代化、本地优先的开发者排障工作台。</div>
+    </div>
+    <div class="proto-actions">
+      <div class="seg" id="platSeg">
+        <button class="on" data-v="desktop">桌面端</button>
+        <button data-v="mobile">移动端</button>
+      </div>
+      <div class="seg" id="themeSeg">
+        <button class="on" data-v="dark">深色</button>
+        <button data-v="light">浅色</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    结构对齐 TextAnalysisTool：<b>标题与命令栏</b> → <b>大日志阅读区</b> → <b>底部规则工作台</b> → <b>状态栏</b>。在保留经典“筛选驱动式阅读”模型的基础上，加入会话、解析状态、规则管道、详情与现代主题；可操作规则、三种显示模式、查找跳转及“查找保存为规则”。
+  </div>
+
+  <!-- ============ 桌面端 ============ -->
+  <section id="desktopView">
+    <div class="app-wrap">
+      <div class="app">
+        <div class="titlebar">
+          <div class="dots"><i></i><i></i><i></i></div>
+          <div class="tb-title">
+            <span class="fname">logcat-crash-20260902.txt</span>
+            <span class="meta">
+              <span>UTF-8</span><span class="dot"></span><span>87.3 MB</span><span class="dot"></span><span>1,204 / 458,213 行</span>
+            </span>
+          </div>
+          <div class="tb-actions">
+            <button class="tb-btn" title="设置"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <button class="tbtn primary" id="openBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+            打开
+          </button>
+          <button class="tbtn" id="reloadBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6"/></svg>
+            刷新
+          </button>
+          <div class="find">
+            <svg class="search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input id="findInput" placeholder="查找（支持正则）…" autocomplete="off">
+            <span class="cnt" id="findCnt">0/0</span>
+            <div class="nav">
+              <button id="findPrev" title="上一个 (Shift+Enter)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg></button>
+              <button id="findNext" title="下一个 (Enter)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+            </div>
+            <button class="pin" id="pinFind" title="保存当前查找为规则"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button>
+          </div>
+          <div class="spacer"></div>
+          <div class="mode-seg" id="modeSeg">
+            <button data-m="all"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>全部</button>
+            <button class="on" data-m="highlight"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11-6 6v-4a6 6 0 0 1 6-6h6a6 6 0 0 1 6 6v4l-6-6"/></svg>高亮</button>
+            <button data-m="only"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18l-7 9v6l-4 2v-8z"/></svg>仅显示</button>
+          </div>
+          <button class="kebab" title="更多"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/></svg></button>
+        </div>
+
+        <div class="analysisbar">
+          <button class="source-tab on">logcat-crash-20260902.txt <span>87.3 MB</span></button>
+          <button class="source-tab">network-debug.txt <span>12.6 MB</span></button>
+          <span class="parse-badge"><i></i>已识别 Android Logcat</span>
+          <span class="context-chip">级别 <b>ERROR 22</b></span>
+          <span class="context-chip">命中 <b>24</b></span>
+          <button class="analysis-action" id="relatedBtn">关联当前 Tag</button>
+        </div>
+
+        <div class="body">
+          <div class="logpane">
+            <div class="loghead">
+              <span class="col-tag">L</span>
+              <span class="col-ln">行号</span>
+              <span class="col-content">日志内容</span>
+            </div>
+            <div class="logscroll" id="logScroll"></div>
+          </div>
+          <div class="filterpane">
+            <div class="filterhead">
+              <div class="filter-left">
+                <div class="panel-tabs" id="panelTabs">
+                  <button class="panel-tab on" data-panel="filters">规则 <span id="fCnt">3 / 4</span></button>
+                  <button class="panel-tab" data-panel="detail">详情</button>
+                </div>
+                <div class="filter-flow" aria-label="过滤处理顺序">
+                  <span class="step include">包含 · 3</span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+                  <span class="step exclude">排除 · 1</span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+                  <span class="step">当前视图</span>
+                </div>
+              </div>
+              <div class="rh" id="filterActions">
+                <button class="fbtn" id="importBtn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                  导入
+                </button>
+                <button class="fbtn" id="exportBtn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                  导出
+                </button>
+                <button class="fbtn primary" id="addBtn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  新增
+                </button>
+              </div>
+            </div>
+            <div class="filterscroll" id="filterList"></div>
+            <div class="detailpane hidden" id="detailPane"></div>
+            <div class="filteradd" id="filterAdd">
+              <input id="newFilterText" class="finput" placeholder="输入匹配文本后回车，例：ANR / com.qcmian.app / Exception.*timeout">
+              <div class="swatches" id="newSwatches"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="statusbar">
+          <div class="grp">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span class="src">~/logs/logcat-crash-20260902.txt</span>
+          </div>
+          <span class="sep">·</span>
+          <span><b class="hit" id="sbHit">22</b> 命中 / <span id="sbTotal">458,213</span> 行</span>
+          <span class="sep">·</span>
+          <span class="grp">Sel: <b style="color:var(--text);margin-left:4px" id="sbSel">1</b></span>
+          <span class="sep">·</span>
+          <span>显示模式 <b style="color:var(--text)" id="sbMode">Highlight</b></span>
+          <div class="grow"></div>
+          <span class="grp">Ln <b style="color:var(--text);margin-left:4px" id="sbLn">12,348</b></span>
+          <span class="sep">·</span>
+          <span>缩放 <b style="color:var(--text)" id="sbZoom">100%</b></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 移动端 ============ -->
+  <section id="mobileView" class="hidden">
+    <div class="mobile-stage">
+      <div class="phone">
+        <div class="phone-screen">
+          <div class="m-top">
+            <button class="ibtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg></button>
+            <span class="enc">UTF-8</span>
+            <span class="fname">logcat-0902.txt</span>
+            <button class="ibtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+          </div>
+          <div class="m-find">
+            <div class="box">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+              <input id="mFindInput" placeholder="查找…" autocomplete="off">
+            </div>
+            <span class="cnt" id="mFindCnt">0/0</span>
+          </div>
+          <div class="m-log" id="mLog"></div>
+          <div class="m-status">
+            <span class="hit" id="mStatusHit">22</span>
+            <span>命中 / 458,213 行</span>
+            <span style="flex:1"></span>
+            <span>Ln <b id="mStatusLn">12,348</b></span>
+          </div>
+          <button class="m-filterbar" onclick="openSheet(true)" aria-label="打开过滤规则">
+            <div class="dots" id="mFilterDots"></div>
+            <span class="label">过滤规则</span>
+            <span class="cnt" id="mFilterCnt">3</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </button>
+          <div class="m-nav">
+            <button class="on" id="mNavFind"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>查找</button>
+            <button id="mNavFilter" onclick="openSheet(true)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 5h18l-7 8v5l-4 2v-7z"/></svg>过滤</button>
+            <button id="mMarkBtn" onclick="toggleMarkerCurrent()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.6-9.3-9A5.4 5.4 0 0 1 12 6.2 5.4 5.4 0 0 1 21.3 12C19 16.4 12 21 12 21z"/></svg>标记</button>
+          </div>
+
+          <div class="sheet-mask" id="sheetMask" onclick="openSheet(false)"></div>
+          <div class="sheet" id="sheet">
+            <div class="grip"></div>
+            <div class="st">过滤器 <span class="t2" id="mSheetHit">22 命中</span></div>
+            <div class="sheet-mode" id="sheetMode">
+              <button data-m="all">全部</button>
+              <button class="on" data-m="highlight">高亮</button>
+              <button data-m="only">仅显示</button>
+            </div>
+            <div class="sheet-body" id="mFilterList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 设计规范 ============ -->
+  <section class="spec">
+    <h2>设计规范</h2>
+    <div class="desc">基于 TAT 的经典双窗格架构：顶部命令栏、大日志阅读区、底部规则工作台与状态栏；以会话、解析状态和规则管道提供现代化排障体验。下表为开发实现依据，Compose 侧映射为 Material Theme + 自定义 ColorScheme。</div>
+    <div class="spec-grid">
+
+      <div class="card">
+        <h3>色彩 · 表面与文字 <span class="meta">dark</span></h3>
+        <div class="sw-grid">
+          <div class="sw-item"><div class="c" style="background:#10141b">#10141B</div><div class="l">bg</div></div>
+          <div class="sw-item"><div class="c" style="background:#161b24">#161B24</div><div class="l">surface</div></div>
+          <div class="sw-item"><div class="c" style="background:#1c222d">#1C222D</div><div class="l">surface-2</div></div>
+          <div class="sw-item"><div class="c" style="background:#262e3d">#262E3D</div><div class="l">border</div></div>
+          <div class="sw-item"><div class="c" style="background:#e6ecf5;color:#10141b;text-shadow:none">#E6ECF5</div><div class="l">text</div></div>
+          <div class="sw-item"><div class="c" style="background:#8693ab">#8693AB</div><div class="l">text-dim</div></div>
+          <div class="sw-item"><div class="c" style="background:#5b8cff">#5B8CFF</div><div class="l">accent</div></div>
+          <div class="sw-item"><div class="c" style="background:#8f7bff">#8F7BFF</div><div class="l">accent-2</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>过滤器调色板 <span class="meta">8 色</span></h3>
+        <div class="sw-grid">
+          <div class="sw-item"><div class="c" style="background:#5b8cff">#5B8CFF</div><div class="l">blue</div></div>
+          <div class="sw-item"><div class="c" style="background:#a78bfa">#A78BFA</div><div class="l">violet</div></div>
+          <div class="sw-item"><div class="c" style="background:#f472b6">#F472B6</div><div class="l">pink</div></div>
+          <div class="sw-item"><div class="c" style="background:#fb7185">#FB7185</div><div class="l">rose</div></div>
+          <div class="sw-item"><div class="c" style="background:#f5a524">#F5A524</div><div class="l">amber</div></div>
+          <div class="sw-item"><div class="c" style="background:#a3e635">#A3E635</div><div class="l">lime</div></div>
+          <div class="sw-item"><div class="c" style="background:#22d3ee">#22D3EE</div><div class="l">cyan</div></div>
+          <div class="sw-item"><div class="c" style="background:#34d399">#34D399</div><div class="l">emerald</div></div>
+        </div>
+        <div style="font-size:11.5px;color:var(--text-dim);margin-top:10px;line-height:1.6">每个过滤器可选一色作为底纹（行 tint 为 13-15% alpha），同时作为左侧 3px 色条和列表小色块，形成"行色 / 列表色 / 标题色条"三处一致的视觉锚点。</div>
+      </div>
+
+      <div class="card">
+        <h3>过滤器行格式 <span class="meta">对齐 TAT</span></h3>
+        <div class="filter-illust">
+          <div class="ex" style="--fc:#5b8cff"><span class="l">a</span><span class="sw" style="background:#5b8cff"></span><span class="d">Matches <b style="color:var(--text)">"FATAL"</b> <span style="color:var(--text-faint)">(i)</span></span><span class="c">3/266</span></div>
+          <div class="ex" style="--fc:#f5a524"><span class="l">b</span><span class="sw" style="background:#f5a524"></span><span class="d">Matches <b style="color:var(--text)">"ANR"</b> <span style="color:var(--text-faint)">(i)</span></span><span class="c">1/266</span></div>
+          <div class="ex" style="--fc:#a78bfa"><span class="l">c</span><span class="sw" style="background:#a78bfa"></span><span class="d">Matches <b style="color:var(--text)">"TagService"</b> <span style="color:var(--text-faint)">(i)</span></span><span class="c">9/266</span></div>
+          <div class="ex" style="--fc:#fb7185"><span class="l">d</span><span class="sw" style="background:#fb7185"></span><span class="d"><span style="color:var(--c-rose);font-weight:600">EXCL</span> Matches <b style="color:var(--text)">"chatty"</b> <span style="color:var(--text-faint)">(i)</span></span><span class="c">42/266</span></div>
+        </div>
+        <div style="font-size:11.5px;color:var(--text-dim);margin-top:10px;line-height:1.6">底部工作台让规则可完整横向阅读，仍沿用紧凑记法：动词（Matches/Excludes）+ 模式串 + 大小写标记（i=不敏感 / s=敏感）+ EXCL/RX 徽标；完整属性（描述、颜色编辑）点 ⋯ 菜单进入编辑对话框。悬停过滤器行可在日志区闪烁对应命中行。</div>
+      </div>
+
+      <div class="card">
+        <h3>三种显示模式 <span class="meta">F3-7</span></h3>
+        <div class="modes">
+          <div class="md"><b>全部</b><span>原样显示所有行</span></div>
+          <div class="md"><b>高亮</b><span>全部显示，命中行着色</span></div>
+          <div class="md"><b>仅显示</b><span>只显示命中行</span></div>
+        </div>
+        <div style="font-size:11.5px;color:var(--text-dim);margin-top:10px;line-height:1.6">快捷键 <kbd style="font-family:var(--font-mono);background:var(--surface-2);border:1px solid var(--border-2);border-radius:4px;padding:1px 5px">Ctrl+H</kbd> 在三态间循环切换。视觉感受：全部态用作"看上下文"，高亮态用作"扫重点"，仅显示态用作"聚焦目标"。</div>
+      </div>
+
+      <div class="card">
+        <h3>字体与排版</h3>
+        <div class="ty-row"><span class="sample" style="font-weight:600">界面文字 · SemiBold 12.5-13</span><span class="meta">-apple-system / PingFang SC</span></div>
+        <div class="ty-row"><span class="sample">正文 · Regular 12.5</span><span class="meta">系统字体栈</span></div>
+        <div class="ty-row"><span class="sample" style="font-family:var(--font-mono)">日志 · JetBrains Mono 12 / 1.6</span><span class="meta">等宽，连字 0</span></div>
+        <div class="ty-row"><span class="sample" style="font-family:var(--font-mono);font-size:11px;color:var(--text-faint)">状态/计数 · Mono 10.5-11.5</span><span class="meta">text-faint</span></div>
+        <div class="ty-row"><span class="sample" style="font-size:10.5px;font-weight:600;letter-spacing:.12em;color:var(--text-faint)">标签栏 · UPPERCASE 10.5 / tracking 0.12em</span><span class="meta">section heading</span></div>
+      </div>
+
+      <div class="card">
+        <h3>间距与圆角</h3>
+        <div class="ty-row"><span class="sample">窗口外圆角 18 / 卡片 10 / 按钮与输入 7 / 开关 99</span><span class="meta">--r-xl/md/sm</span></div>
+        <div class="ty-row"><span class="sample">行高：日志 1.6 / 过滤行 32px / 工具栏 50px / 状态栏 30px</span><span class="meta">--</span></div>
+        <div class="ty-row"><span class="sample">间距：8 / 12 / 16 / 24 · 过滤色条 3px / 标记条 3px</span><span class="meta">8-pt grid</span></div>
+        <div class="ty-row"><span class="sample">阴影：窗口 30-90 0-20，弹出 12-32 -8</span><span class="meta">--shadow-window / --shadow-pop</span></div>
+      </div>
+
+    </div>
+  </section>
+</div>
+
+<script>
+/* ================= 示例数据 ================= */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const rnd=mulberry32(20260902);
+const TAGS={
+  E:["AndroidRuntime","System.err","TagService","BtGatt.Jni"],
+  W:["PowerManagerService","WifiService","ActivityManager","AudioFlinger","chatty"],
+  I:["ActivityManager","DisplayManager","PackageManager","SystemServer"],
+  D:["BufferQueue","OpenGLRenderer","BluetoothAdapter","SensorService"],
+  V:["VerboseTag","VendorService"]
+};
+const MSG={
+  E:["FATAL EXCEPTION: main","java.lang.NullPointerException: Attempt to invoke virtual method on a null object reference","Failed to sync tags, retry in 5s","ANR in com.qcmian.app, time=1873ms","Cannot bind to service Intent { act=SYNC }"],
+  W:["WakeLock held too long: 4821ms by com.qcmian.app","Wifi scan request throttled, interval=30s","Activity pause timeout for ActivityRecord{… MainActivity}","AudioFlinger could not create track, status=-12","uid=10234 com.qcmian.app expired 3 wakeups"],
+  I:["START u0 {act=android.intent.action.MAIN cat=…} from uid 10234","Displayed com.qcmian.app/.MainActivity: +873ms","Package com.qcmian.app updated, versionCode=42","Display device changed state to ON"],
+  D:["dequeueBuffer: fps=58.9, dropped=0, latency=2.1ms","GLRenderer: cache size 4.2MB, hit rate 96%","BLE scan result: 9C:02:98:22:3D:BE, rssi=-67dBm","Sensor BATCHING: eventCount=128, latency=10ms"],
+  V:["vendor hook: tp_touch down x=842 y=1326","profile: gc pause 3.2ms"]
+};
+const LINES=[];
+(function gen(){
+  let t=21*3600*1000+43*1000+120, ln=12000;
+  const mk=(level,tag,msg,cont)=>{const d=new Date(t);
+    LINES.push({ln:ln++,time:`09-02 ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}:${String(d.getSeconds()).padStart(2,"0")}.${String(d.getMilliseconds()).padStart(3,"0")}`,
+      pid:4000+Math.floor(rnd()*900),tid:4000+Math.floor(rnd()*1500),level,tag,msg,cont:!!cont});
+    t+=1+Math.floor(rnd()*95);};
+  for(let i=0;i<260;i++){
+    const r=rnd();const level=r<.08?"E":r<.25?"W":r<.6?"I":r<.9?"D":"V";
+    const tag=TAGS[level][Math.floor(rnd()*TAGS[level].length)];
+    const msg=MSG[level][Math.floor(rnd()*MSG[level].length)];
+    mk(level,tag,msg);
+  }
+  const ei=LINES.length;
+  mk("E","AndroidRuntime","FATAL EXCEPTION: main");
+  mk("E","","java.lang.IllegalStateException: The adapter is not attached yet",true);
+  mk("E","","  at com.qcmian.app.feed.FeedFragment.render(FeedFragment.kt:88)",true);
+  mk("E","","  at com.qcmian.app.feed.FeedViewModel$observe$1.emit(FeedViewModel.kt:41)",true);
+  mk("E","","  at kotlinx.coroutines.flow.internal.SafeCollectorKt.collect(SafeCollector.kt:114)",true);
+  mk("E","","  at com.qcmian.app.MainActivity.onCreate(MainActivity.kt:52)",true);
+  /* 标记示例 */
+  LINES[3].marks=["#5b8cff"];LINES[ei].marks=["#fb7185","#5b8cff"];LINES[ei+5].marks=["#5b8cff"];LINES[ei-30].marks=["#f5a524"];LINES[42].marks=["#a78bfa"];
+})();
+function pick(a){return a[Math.floor(rnd()*a.length)]}
+
+/* ================= 状态 ================= */
+const PALETTE=[
+  {c:"#5b8cff",t:"rgba(91,140,255,.14)"},
+  {c:"#a78bfa",t:"rgba(167,139,250,.14)"},
+  {c:"#f472b6",t:"rgba(244,114,182,.14)"},
+  {c:"#fb7185",t:"rgba(251,113,133,.14)"},
+  {c:"#f5a524",t:"rgba(245,165,36,.15)"},
+  {c:"#a3e635",t:"rgba(163,230,53,.13)"},
+  {c:"#22d3ee",t:"rgba(34,211,238,.13)"},
+  {c:"#34d399",t:"rgba(52,211,153,.13)"},
+];
+let pIdx=0;
+const state={
+  filters:[
+    {id:"a",name:"FATAL",exclude:false,regex:false,caseIns:true,color:PALETTE[0].c,tint:PALETTE[0].t,on:true},
+    {id:"b",name:"ANR",exclude:false,regex:false,caseIns:true,color:PALETTE[4].c,tint:PALETTE[4].t,on:true},
+    {id:"c",name:"TagService",exclude:false,regex:false,caseIns:true,color:PALETTE[1].c,tint:PALETTE[1].t,on:true},
+    {id:"d",name:"chatty",exclude:true,regex:false,caseIns:true,color:PALETTE[3].c,tint:PALETTE[3].t,on:true},
+  ],
+  mode:"highlight",/* all|highlight|only */
+  find:"", findIdx:0,
+  curLn:0,
+  zoom:100,
+  panel:"filters"
+};
+
+/* ================= 过滤 ================= */
+function lineMatchFilter(l,f){
+  if(f.exclude) return (l.msg+l.tag).toLowerCase().includes(f.name.toLowerCase());
+  if(f.regex){
+    try{return new RegExp(f.name,f.caseIns?"i":"").test(l.msg+l.tag)}catch(e){return false}
+  }
+  const a=(l.msg+l.tag),b=f.caseIns?f.name.toLowerCase():f.name;
+  return f.caseIns?a.toLowerCase().includes(b):a.includes(b);
+}
+function firstIncludeMatch(l){
+  for(const f of state.filters) if(!f.exclude && f.on && lineMatchFilter(l,f)) return f;
+  return null;
+}
+function excluded(l){ return state.filters.some(f=>f.exclude && f.on && lineMatchFilter(l,f)); }
+function visible(l){
+  if(excluded(l)) return false;
+  const anyInc = state.filters.some(f=>!f.exclude && f.on);
+  if(!anyInc) return true;
+  return !!firstIncludeMatch(l);
+}
+function matchColor(l){ return firstIncludeMatch(l); }
+function counts(){
+  const c={};
+  for(const f of state.filters){
+    c[f.id] = LINES.filter(l=>lineMatchFilter(l,f)).length;
+  }
+  return c;
+}
+
+/* ================= 高亮 ================= */
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;")}
+function hl(s){
+  if(!state.find) return esc(s);
+  let re;
+  try{re=new RegExp(state.find,"gi")}catch(e){return esc(s)}
+  return esc(s).replace(re,m=>`<mark>${m}</mark>`);
+}
+
+/* ================= 渲染 ================= */
+function rowHtml(l){
+  const inc = matchColor(l);
+  const vis = visible(l);
+  const show = state.mode==="only" ? vis : true;
+  const dim  = state.mode==="highlight" && !vis;
+  if(!show) return "";
+  const t = inc ? `background:${inc.tint}` : "";
+  const mks = (l.marks||[]).map(c=>`<span class="bar" style="background:${c}"></span>`).join("");
+  const mk = mks?`<span class="mk">${mks}</span>`:`<span class="mk"></span>`;
+  let txt;
+  if(l.cont){
+    txt=`<span class="txt">${hl(l.msg)}</span>`;
+  } else {
+    const lvl=l.level;
+    txt=`<span class="txt"><span style="color:${inc?inc.color:levelColor(lvl)};font-weight:700">${lvl}</span> <span style="color:var(--text-faint)">${l.time}</span> <span style="color:var(--text-faint)">${l.pid} ${l.tid}</span> <span style="color:var(--accent-2)">${esc(l.tag)}</span>: ${hl(l.msg)}</span>`;
+  }
+  const cur = (l.ln===state.curLn)?"cur":"";
+  const dimCls = dim?"dim":"";
+  return `<div class="row ${dimCls} ${l.cont?"cont":""} ${cur}" data-ln="${l.ln}" data-tag="${esc(l.tag)}" style="${t}">${mk}<span class="tag-l ${l.level}">${l.cont?"":l.level}</span><span class="ln">${l.ln}</span>${txt}</div>`;
+}
+function levelColor(l){return {E:"var(--c-rose)",W:"var(--c-amber)",I:"var(--c-blue)",D:"var(--text-faint)",V:"var(--text-faint)"}[l]||"var(--text)"}
+
+function filterRowHtml(f,cnt,compact){
+  const verb = f.exclude?"Excludes":"Matches";
+  const rx = f.regex?'<span class="tag-rx">RX</span>':'';
+  const ex = f.exclude?'<span class="tag-excl">EXCL</span>':'';
+  const pat = f.regex ? `/${f.name}/` : `"${f.name}"`;
+  const cs = f.caseIns?"i":"s";
+  return `<div class="frow ${f.on?"on":""}" data-id="${f.id}" style="--fc:${f.color}">`+
+    `<span class="chk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>`+
+    `<span class="lt">${f.id}</span>`+
+    `<span class="swatch"></span>`+
+    `<span class="desc">${verb} <span class="pat">${esc(pat)}</span><span class="meta">(${cs})</span> ${ex}${rx}</span>`+
+    `<span class="cnt"><b>${cnt.toLocaleString()}</b>/${LINES.length.toLocaleString()}</span>`+
+    (compact?'':`<button class="menu" data-del="${f.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/></svg></button>`)+
+    `</div>`;
+}
+function updatePanel(){
+  const detail=state.panel==="detail";
+  const current=LINES.find(l=>l.ln===state.curLn);
+  document.getElementById("filterList").classList.toggle("hidden",detail);
+  document.getElementById("filterAdd").classList.toggle("hidden",detail);
+  document.getElementById("filterActions").classList.toggle("hidden",detail);
+  document.getElementById("detailPane").classList.toggle("hidden",!detail);
+  document.querySelectorAll("#panelTabs button").forEach(b=>b.classList.toggle("on",b.dataset.panel===state.panel));
+  if(!detail) return;
+  if(!current){document.getElementById("detailPane").innerHTML='<div class="empty">选择一行日志以查看解析字段、原始内容和关联操作。</div>';return}
+  const tag=current.tag||"未解析 Tag";
+  const level=current.level||"E";
+  document.getElementById("detailPane").innerHTML=`<div class="detail-title"><span>已选日志 · Ln ${current.ln.toLocaleString()}</span><span class="level">${esc(level)} · ${esc(tag)}</span></div><div class="detail-message">${esc(current.msg)}</div><div class="field-label">已解析字段</div><div class="field-grid"><div class="field"><span>时间</span><b>${esc(current.time||"—")}</b></div><div class="field"><span>级别</span><b>${esc(level)}</b></div><div class="field"><span>Tag / 模块</span><b>${esc(tag)}</b></div><div class="field"><span>PID / TID</span><b>${current.pid?`${current.pid} / ${current.tid}`:"—"}</b></div></div><div class="field-label">排障动作</div><div class="detail-actions"><button data-related="${esc(current.tag||"")}">关联 Tag</button><button data-copy-ln="${current.ln}">复制定位</button></div>`;
+}
+
+function render(){
+  const cnt=counts();
+  const html=LINES.map(rowHtml).join("");
+  document.getElementById("logScroll").innerHTML=html;
+  document.getElementById("mLog").innerHTML=html;
+
+  document.getElementById("filterList").innerHTML=state.filters.map(f=>filterRowHtml(f,cnt[f.id])).join("");
+  document.getElementById("mFilterList").innerHTML=state.filters.map(f=>filterRowHtml(f,cnt[f.id],true)).join("");
+
+  /* 移动端过滤器小色条 */
+  document.getElementById("mFilterDots").innerHTML=state.filters.map(f=>`<i style="background:${f.on?f.color:'var(--border-2)'}"></i>`).join("");
+  document.getElementById("mFilterCnt").textContent=state.filters.filter(f=>f.on).length;
+
+  /* 头部分数 */
+  const enabled=state.filters.filter(f=>f.on).length;
+  document.getElementById("fCnt").textContent=`${enabled} / ${state.filters.length}`;
+  /* 命中数 */
+  const hit=LINES.filter(visible).length;
+  document.getElementById("sbHit").textContent=hit.toLocaleString();
+  document.getElementById("sbTotal").textContent=LINES.length.toLocaleString();
+  document.getElementById("sbSel").textContent=state.curLn||"—";
+  document.getElementById("sbMode").textContent=state.mode==="all"?"Show All":state.mode==="highlight"?"Highlight":"Show Only";
+  document.getElementById("sbLn").textContent=state.curLn?state.curLn.toLocaleString():"—";
+  document.getElementById("sbZoom").textContent=state.zoom+"%";
+  document.getElementById("mStatusHit").textContent=hit.toLocaleString();
+  document.getElementById("mStatusLn").textContent=state.curLn?state.curLn.toLocaleString():"—";
+  document.getElementById("mSheetHit").textContent=hit.toLocaleString()+" 命中";
+  const current=LINES.find(l=>l.ln===state.curLn);
+  document.getElementById("mMarkBtn").classList.toggle("on",!!current?.marks?.includes(PALETTE[0].c));
+
+  /* 模式按钮态 */
+  document.querySelectorAll("#modeSeg button").forEach(b=>b.classList.toggle("on",b.dataset.m===state.mode));
+  document.querySelectorAll("#sheetMode button").forEach(b=>b.classList.toggle("on",b.dataset.m===state.mode));
+
+  updateFindCnt();
+  renderNewSwatches();
+  updatePanel();
+}
+
+function renderNewSwatches(){
+  const c=document.getElementById("newSwatches");
+  c.innerHTML=PALETTE.map((p,i)=>`<button data-idx="${i}" style="background:${p.c}" class="${i===pIdx?"sel":""}"></button>`).join("");
+}
+state.curLn = LINES[3].ln;
+render();
+
+/* ================= 查找 ================= */
+function findMarks(){
+  const desktopHidden=document.getElementById("desktopView").classList.contains("hidden");
+  const sel=desktopHidden?"#mLog mark":"#logScroll mark";
+  return [...document.querySelectorAll(sel)]
+}
+function updateFindCnt(){
+  const n=findMarks().length;
+  document.getElementById("findCnt").textContent=`${n?state.findIdx+1:0}/${n}`;
+  document.getElementById("mFindCnt").textContent=`${n?state.findIdx+1:0}/${n}`;
+  document.getElementById("findPrev").disabled=!n;
+  document.getElementById("findNext").disabled=!n;
+}
+function gotoMark(dir){
+  const ms=findMarks();if(!ms.length)return;
+  state.findIdx=(state.findIdx+dir+ms.length)%ms.length;
+  ms[state.findIdx].scrollIntoView({block:"center",behavior:"smooth"});
+  updateFindCnt();
+}
+function onFind(v,isMobile){
+  state.find=v;state.findIdx=0;
+  if(isMobile){document.getElementById("findInput").value=v}
+  else{document.getElementById("mFindInput").value=v}
+  render();
+}
+document.getElementById("findInput").addEventListener("input",e=>onFind(e.target.value,false));
+document.getElementById("mFindInput").addEventListener("input",e=>onFind(e.target.value,true));
+document.getElementById("findNext").onclick=()=>gotoMark(1);
+document.getElementById("findPrev").onclick=()=>gotoMark(-1);
+document.getElementById("pinFind").onclick=()=>{const name=state.find.trim();if(!name){document.getElementById("findInput").focus();return}const existing=state.filters.find(f=>!f.exclude&&f.name===name);if(existing){existing.on=true;render();return}addFilter(name)};
+document.getElementById("findInput").addEventListener("keydown",e=>{if(e.key==="Enter"){e.shiftKey?gotoMark(-1):gotoMark(1)}});
+
+/* ================= 模式切换 ================= */
+function setMode(m){
+  state.mode=m;
+  document.querySelectorAll("#modeSeg button,#sheetMode button").forEach(b=>b.classList.toggle("on",b.dataset.m===m));
+  render();
+}
+document.getElementById("modeSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(b)setMode(b.dataset.m)});
+document.getElementById("sheetMode").addEventListener("click",e=>{const b=e.target.closest("button");if(b)setMode(b.dataset.m)});
+document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="h"){e.preventDefault();setMode(state.mode==="all"?"highlight":state.mode==="highlight"?"only":"all")}});
+
+/* ================= 过滤器交互 ================= */
+function bindFilterList(id){
+  document.getElementById(id).addEventListener("click",e=>{
+    const del=e.target.closest("[data-del]");if(del){state.filters=state.filters.filter(f=>f.id!==del.dataset.del);render();return}
+    const row=e.target.closest(".frow");if(!row)return;
+    const f=state.filters.find(x=>x.id===row.dataset.id);f.on=!f.on;render();
+  });
+}
+bindFilterList("filterList");bindFilterList("mFilterList");
+
+/* ================= 添加过滤器 ================= */
+function nextLetter(){
+  const used=state.filters.map(f=>f.id.charCodeAt(0));
+  for(let i=97;i<123;i++) if(!used.includes(i)) return String.fromCharCode(i);
+  return "x"+(state.filters.length);
+}
+function addFilter(name,colorIdx){
+  if(!name)return;
+  const c=PALETTE[colorIdx??pIdx];
+  state.filters.push({id:nextLetter(),name,exclude:false,regex:false,caseIns:true,color:c.c,tint:c.t,on:true});
+  pIdx=(colorIdx!==undefined?colorIdx:pIdx+1)%PALETTE.length;
+  render();
+}
+document.getElementById("addBtn").onclick=()=>{document.getElementById("newFilterText").focus()};
+document.getElementById("newFilterText").addEventListener("keydown",e=>{if(e.key==="Enter"){addFilter(e.target.value.trim());e.target.value=""}});
+document.getElementById("newSwatches").addEventListener("click",e=>{const b=e.target.closest("button");if(b){pIdx=+b.dataset.idx;renderNewSwatches()}});
+function relateCurrentTag(){
+  const current=LINES.find(l=>l.ln===state.curLn);
+  const tag=current?.tag;
+  if(!tag)return;
+  const existing=state.filters.find(f=>!f.exclude&&f.name===tag);
+  if(existing) existing.on=true;
+  else{const c=PALETTE[pIdx];state.filters.push({id:nextLetter(),name:tag,exclude:false,regex:false,caseIns:true,color:c.c,tint:c.t,on:true});pIdx=(pIdx+1)%PALETTE.length}
+  state.panel="filters";
+  render();
+}
+document.getElementById("relatedBtn").onclick=relateCurrentTag;
+document.getElementById("panelTabs").addEventListener("click",e=>{const b=e.target.closest("button");if(b){state.panel=b.dataset.panel;render()}});
+document.getElementById("detailPane").addEventListener("click",e=>{
+  const related=e.target.closest("[data-related]");if(related){relateCurrentTag();return}
+  const copy=e.target.closest("[data-copy-ln]");if(copy){const text=`logcat-crash-20260902.txt:Ln ${copy.dataset.copyLn}`;navigator.clipboard?.writeText(text).catch(()=>{});copy.textContent="已复制定位"}
+});
+
+/* ================= 行点击 ================= */
+for(const cid of ["logScroll","mLog"]){
+  const el=document.getElementById(cid);
+  el.addEventListener("click",e=>{
+    const r=e.target.closest(".row");if(r&&!e.target.closest(".mk")){state.curLn=+r.dataset.ln;if(cid==="logScroll")state.panel="detail";render()}
+  });
+  el.addEventListener("dblclick",e=>{
+    const r=e.target.closest(".row");if(!r||!r.dataset.tag)return;
+    addFilter(r.dataset.tag);
+  });
+}
+
+/* ================= 平台 / 主题 / 抽屉 ================= */
+document.getElementById("platSeg").addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b)return;
+  document.querySelectorAll("#platSeg button").forEach(x=>x.classList.toggle("on",x===b));
+  document.getElementById("desktopView").classList.toggle("hidden",b.dataset.v!=="desktop");
+  document.getElementById("mobileView").classList.toggle("hidden",b.dataset.v!=="mobile");
+});
+document.getElementById("themeSeg").addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b)return;
+  document.querySelectorAll("#themeSeg button").forEach(x=>x.classList.toggle("on",x===b));
+  document.documentElement.dataset.theme=b.dataset.v;
+});
+function openSheet(o){
+  document.getElementById("sheet").classList.toggle("open",o);
+  document.getElementById("sheetMask").classList.toggle("open",o);
+  document.getElementById("mNavFind").classList.toggle("on",!o);
+  document.getElementById("mNavFilter").classList.toggle("on",o);
+}
+document.getElementById("mNavFind").onclick=()=>{openSheet(false);document.getElementById("mFindInput").focus()};
+function toggleMarkerCurrent(){
+  const current=LINES.find(l=>l.ln===state.curLn);
+  if(!current)return;
+  const color=PALETTE[0].c;
+  current.marks=current.marks||[];
+  current.marks=current.marks.includes(color)?current.marks.filter(c=>c!==color):[...current.marks,color];
+  render();
+}
+</script>
+</body>
+</html>
