@@ -11,8 +11,6 @@ dependencies {
 
     implementation(compose.desktop.currentOs)
     implementation(libs.kotlinx.coroutinesSwing)
-
-    implementation(libs.compose.uiToolingPreview)
 }
 
 compose.desktop {
@@ -29,6 +27,10 @@ compose.desktop {
             )
         } else {
             jvmArgs("-XX:MaxRAMPercentage=60.0")
+        }
+
+        buildTypes.release.proguard {
+            obfuscate.set(true)
         }
 
         nativeDistributions {

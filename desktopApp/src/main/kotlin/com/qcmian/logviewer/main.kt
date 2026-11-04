@@ -97,7 +97,7 @@ fun main(args: Array<String>) {
         },
         // 空标题：Chrome 式标题栏下窗口标题文字会遮挡文件 tab，去掉（Dock/前进后退已足够标识）
         title = "",
-        icon = androidx.compose.ui.res.painterResource("icons/icon.png"),
+        icon = androidx.compose.ui.res.painterResource("icons/icon-256.png"),
         state = rememberWindowState(width = 1280.dp, height = 820.dp),
     ) {
         // Chrome 式标题栏：macOS 内容延伸到标题栏区域，系统交通灯（红黄绿）叠加在 Tab 栏左侧
