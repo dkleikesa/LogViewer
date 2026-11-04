@@ -17,7 +17,15 @@
 # iOS：iosApp 目录用 Xcode 打开运行
 ```
 
-> 网络受限环境已内置阿里云/华为云镜像（`settings.gradle.kts`）。
+## 国内网络
+
+| 环节 | 镜像 |
+| --- | --- |
+| Gradle 发行包 | 腾讯云 `mirrors.cloud.tencent.com/gradle`（校验和不变，海外可换回 `services.gradle.org`） |
+| Maven / Gradle 插件 | 阿里云 public / google / gradle-plugin 优先，华为云备选，官方源兜底 |
+| Kotlin/Native 编译器 | 走 Maven 镜像（`kotlin.native.distribution.downloadFromMaven=true`），不再直连 `download.jetbrains.com` |
+| Node 发行包 | npmmirror `cdn.npmmirror.com/binaries/node`（根 `build.gradle.kts`） |
+| npm 依赖 | npmmirror registry；JS/Wasm 改用 npm（`kotlin.js.yarn=false`，yarn 无可用国内二进制源） |
 
 ## 交付范围（对齐 docs/需求文档.md v0.6，四批一次性交付）
 
